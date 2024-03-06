@@ -1,0 +1,75 @@
+
+<template>
+  <div class="min-h-[100vh] bg-gray-100 flex flex-col items-center relative">
+    <div class="w-full flex flex-row justify-center my-8">
+      <div class="w-8 h-8 bg-white flex justify-center items-center shadow-md mr-1">
+        <svg class="w-6 h-6" id="Layer_1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="m66.79 76.02 9.52 9.52c1.28 1.28 2.96 1.92 4.64 1.92 1.67 0 3.33-.63 4.6-1.9 2.55-2.55 2.55-6.71 0-9.26l-9.52-9.52c-1.22-1.22-2.86-1.91-4.66-1.92-.39.01-.78.05-1.15.12l-3.38-3.38c8.95-11.53 7.99-28.27-2.45-38.71-11.44-11.44-30.05-11.44-41.5 0-11.44 11.44-11.44 30.07 0 41.51 5.67 5.67 13.22 8.54 20.77 8.54 6.34 0 12.67-2.05 17.92-6.13l3.4 3.4c-.38 2.1.28 4.3 1.81 5.81zm4.6-8.16c.96.01 1.86.38 2.52 1.04l9.52 9.52c.67.67 1.04 1.56 1.04 2.51s-.37 1.84-1.04 2.51c-1.37 1.37-3.62 1.36-5-.02l-9.52-9.52c-.95-.94-1.28-2.37-.83-3.66.07-.22.15-.39.24-.55.15-.29.35-.55.56-.76.24-.24.53-.45.84-.62.18-.1.35-.18.53-.24.36-.14.76-.2 1.14-.21zm-46.38-5.58c-10.27-10.28-10.27-26.99 0-37.27 5.14-5.13 11.89-7.7 18.63-7.7 6.75 0 13.49 2.57 18.63 7.7 9.67 9.67 10.29 25.35 1.41 35.71-.01.01-.01.02-.02.03-.2.25-.41.48-.69.78-.21.25-.44.49-.71.75-.24.24-.49.49-.79.75-.24.22-.47.43-.75.65-10.36 8.87-26.05 8.25-35.71-1.4zm39.36 2.14c.19-.18.36-.35.5-.51.01-.01.01-.01.02-.02l2.42 2.41c-.19.15-.37.31-.54.47-.16.16-.32.34-.46.52l-2.41-2.41c.16-.15.32-.31.47-.46z"/></svg>
+      </div>
+      <input 
+        @input="searchingPosts"
+        v-model="search"
+        class="h-8 min-w-[80%] sm:min-w-[320px] bg-white border shadow-md outline-blue-500 pl-2"
+        type="text"
+        placeholder="Filter by author.."
+      />
+    </div>
+    <div class="flex flex-wrap justify-center sm:justify-start">
+      <div 
+        v-for="post in sortedPosts" 
+        class="w-[90%] sm:w-[calc(50%-32px)] lg:w-[calc(33%-32px)] xl:w-[calc(25%-32px)] 2xl:w-[calc(20%-32px)] h-full bg-white shadow-md m-4 p-4"
+      >
+        <h3 class="text-blue-500 text-xl mb-2">
+          {{post.title}}
+        </h3>
+        <div class="mb-4">
+          {{post.body}}
+        </div>
+        <div class="text-gray-400">
+          {{post.author}}
+        </div>
+      </div>
+      <div v-if="!sortedPosts.length">
+        No posts matching the search criteria
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+
+export default {
+  data() {
+    return {
+      posts: [],
+      search: '',
+      sortedPosts: []
+    }
+  },
+  methods: {
+    async getPosts() {
+      const promisePosts = fetch('https://jsonplaceholder.typicode.com/posts');
+      const promiseUsers = fetch('https://jsonplaceholder.typicode.com/users');
+
+      Promise.all([promisePosts, promiseUsers])
+        .then(responses => Promise.all(responses.map(response => response.json())))
+        .then(data => {
+          this.posts= data[0].map( post => {
+            let search = data[1].find(user => user.id === post.userId)
+            post = { ...post, author: search.name};
+            return post
+          })
+          this.sortedPosts = this.posts
+        })
+        .catch(error => console.error(error));
+    },
+
+    searchingPosts() {
+      this.sortedPosts = this.posts.filter(post => post.author.toLowerCase().includes(this.search.toLowerCase()));
+    }
+  },
+  beforeMount() {
+    this.getPosts()
+  }
+}
+
+</script>
